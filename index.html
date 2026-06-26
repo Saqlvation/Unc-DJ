@@ -5,10 +5,46 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>unc dj</title>
         <link rel="icon" type="image/png" href="assets/icon.png">
+
+        <style>
+            #textComponents{
+                text-align: center;
+            }
+
+            #visualizer{
+                background: #050505;
+                height: 200px;
+                width: 600px;
+            }
+        </style>
     </head>
 
     <body>
+        <div id="textComponents">
+        <h1>!! UNC DJ !!</h1>
+        <div id="fileSelection">
+        <p> You can drag your mp3 file here or click the button to select it</p>
+        <input type="file" id="file-input" accept="audio/mp3">
+        </div>
 
+        <canvas id="visualizer"> </canvas>
+
+        <br><br>
+
+        <div id="controlZone">
+            <div>
+                <label for="bass-slider"> bass boost</label>
+                <input type="range" id="bass-slider" min="0" max="25" value="0">
+            </div>
+            <br>
+        </div>
+
+
+
+
+
+
+        </div>
         <script src="script.js"></script>
     </body>
 </html>
