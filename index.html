@@ -37,6 +37,26 @@
                 position: fixed;
 
             }
+            #timeline {
+                display: flex;
+                justify-content:center;
+                margin-top: 10px;
+                gap: 10px;
+                align-items: center;
+            }
+            #time{
+                width: 300px;
+                cursor: crosshair;
+            }
+            #controls {
+                margin-bottom: 10px;
+            }
+            #play-pause{
+                font-size: 20px;
+                padding: 5px 15px;
+                margin: 0 10px;
+                cursor: pointer;
+            }
 
         </style>
     </head>
@@ -55,14 +75,27 @@
             </div>
         </div>
 
-
-
-
          </div>
         <div id="fileSelection">
         <p> You can drag your mp3 file here or click the button to select it</p>
         <input type="file" id="file-input" accept="audio/mp3">
         </div>
+        <!-- the pause and play song button -->
+        <div id="controls">
+            <div id="buttons">
+                <button id="play-pause">Play</button>
+            </div>
+        <!-- start of the line that tracks the time-->
+         <div id="timeline">
+            <span id="time">0;00</span>
+            <input type="range" id="progress" min="0" max="100" value="0">
+            <span id="totalDuration">0:00</span>
+         </div>
+        
+        </div>
+
+
+
 
         <canvas id="visualizer"> </canvas>
 
