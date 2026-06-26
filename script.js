@@ -57,9 +57,23 @@ if (!audioCtx || !audioBuffer) return;
     const source = audioCtx.createBufferSource();
     source.buffer = audioBuffer;
     // connects it to the speakers
-    source.connect(audioCtx.destination);
+    bassNode = audioCtx.createBiquadFilter();
+    bassNode.type = "lowshelf";// targets only frequenscies below a given lim
+    bassNode.frequency.value = 200; // only below 200 hz
+    bassNode.gain.value = bassSlider.value; // the boost gets based off the slider
+
+
+    source.connect(bassNode);
+    bassNode.connect(audioCtx.destination);
+
     source.start(0);
 }
+
+bassSlider.addEventListener("input", (e) => {
+    if (bassNode) { 
+        bassNode.gain.value = e.target.value;
+    }
+});
     
 
 
