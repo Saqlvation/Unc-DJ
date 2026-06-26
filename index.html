@@ -7,6 +7,10 @@
         <link rel="icon" type="image/png" href="assets/icon.png">
 
         <style>
+
+            body {
+                text-align: center;
+            }
             #textComponents{
                 text-align: center;
             }
@@ -16,12 +20,44 @@
                 height: 200px;
                 width: 600px;
             }
+
+            .songItem{
+                cursor: pointer;
+                padding: 20px 20px;
+                border-bottom: 8px;
+            }
+            #songs {
+                padding: 10px;
+                width: 300px;
+                border: 2px #050505;
+            }
+            #mySongs{
+                margin-bottom: 25px;
+                position: fixed;
+
+            }
+
         </style>
     </head>
 
     <body>
         <div id="textComponents">
         <h1>!! UNC DJ !!</h1>
+
+
+        <!-- start of my own chosen songs selections -->
+         <div id="mySongs">
+            <h3>Instead of uploading you can edit one of these songs:</h3>
+            <div id="songs">
+                <div class="songItem" data-src="music/song1.mp3">Juna</div>
+                <div class="songItem" data-src="music/song2.mp3">Babydoll</div>
+            </div>
+        </div>
+
+
+
+
+         </div>
         <div id="fileSelection">
         <p> You can drag your mp3 file here or click the button to select it</p>
         <input type="file" id="file-input" accept="audio/mp3">
