@@ -5,6 +5,8 @@ const fileInput = document.getElementById("file-input");
 const fileSelection = document.getElementById("fileSelection");
 let audioCtx = null;
 let audioBuffer = null;
+let bassNode = null;
+let nostalgiaFilter = null; 
 // i mainly used this as documentation for tjis code  https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API 
 fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -57,14 +59,21 @@ if (!audioCtx || !audioBuffer) return;
     const source = audioCtx.createBufferSource();
     source.buffer = audioBuffer;
     // connects it to the speakers
+    // bass booster
     bassNode = audioCtx.createBiquadFilter();
     bassNode.type = "lowshelf";// targets only frequenscies below a given lim
     bassNode.frequency.value = 200; // only below 200 hz
     bassNode.gain.value = bassSlider.value; // the boost gets based off the slider
-
+    // old filter
+    nostalgiaFilter = audioCtx.createBiquadFilter();
+    nostalgiaFilter.type = "bandpass";
+    nostalgiaFilter.frequency.value = 1500; // voice frequencies
+    // we then use the Q which is the quality fasctor of the audio and control itif the slider is at 0 its low if its at 1 we set it to 2 so it "ruins " the sound
+    nostalgiaFilter.Q.value = nostalgiaSlider.value == "1" ? 2.0 : 0.0001;
 
     source.connect(bassNode);
-    bassNode.connect(audioCtx.destination);
+    bassNode.connect(nostalgiaFilter);
+    nostalgiaFilter.connect(audioCtx.destination);
 
     source.start(0);
 }
@@ -74,7 +83,12 @@ bassSlider.addEventListener("input", (e) => {
         bassNode.gain.value = e.target.value;
     }
 });
-    
+
+nostalgiaSlider.addEventListener("input", (e) => {
+    if(nostalgiaFilter){
+        nostalgiaFilter.Q.value = e.target.value == '1' ? 2.0 : 0.0001;
+    }
+})
 
 
 
