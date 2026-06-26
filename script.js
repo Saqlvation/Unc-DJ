@@ -9,6 +9,20 @@ let bassNode = null;
 let nostalgiaFilter = null; 
 
 const mySongs = document.querySelectorAll(".songItem") // gets all the songs we need the dot sicne its  a class
+
+
+// adding all the control related stuff
+const playPauseBtn = document.getElementById("play-pause");
+const currentTimeLabel = document.getElementById("time");
+const progressBar = document.getElementById("progress");
+const totalDurationLabel = document.getElementById("totalDuration");
+let sourceNode = null;       
+let isPlaying = false; // Tracks the current state
+let startTime = 0;          
+let pausedAt = 0;           
+let progressInterval = null;
+
+
 // i mainly used this as documentation for tjis code  https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API 
 
 mySongs.forEach(item => {
