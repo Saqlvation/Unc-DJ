@@ -7,7 +7,35 @@ let audioCtx = null;
 let audioBuffer = null;
 let bassNode = null;
 let nostalgiaFilter = null; 
+
+const mySongs = document.querySelectorAll(".songItem") // gets all the songs we need the dot sicne its  a class
 // i mainly used this as documentation for tjis code  https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API 
+
+mySongs.forEach(item => {
+    item.addEventListener('click', (e) => {
+        //gets the file path
+        const songSRC = e.target.getAttribute('data-src');
+        loadPresetSong(songSRC); // we call the preset function
+    });
+});
+
+function loadPresetSong(src){
+        if(!audioCtx) {
+        audioCtx = new(window.AudioContext|| window.webkitAudioContext)();
+    }
+// we use fetch and then just like my recent project where i used NASA's api
+    fetch(src)
+    .then(response => response.arrayBuffer())
+    .then(rawData => {
+            return audioCtx.decodeAudioData(rawData);
+        })
+        // decodes the preset song and plays it
+    .then(decodedBuffer => {
+            audioBuffer = decodedBuffer;
+            playAudio();
+        })
+
+}
 fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
