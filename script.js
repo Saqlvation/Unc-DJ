@@ -7,6 +7,7 @@ let audioCtx = null;
 let audioBuffer = null;
 let bassNode = null;
 let nostalgiaFilter = null; 
+let analyser = null;
 
 const mySongs = document.querySelectorAll(".songItem") // gets all the songs we need the dot sicne its  a class
 
@@ -23,7 +24,13 @@ let pausedAt = 0;
 let progressInterval = null;
 
 
+
 // i mainly used this as documentation for tjis code  https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Using_Web_Audio_API 
+function formatTime(seconds){ // helps change seconds to look like normal 0:00 time
+    const mins = Math.floor(seconds/60);
+    const secs = Math.floor(seconds%60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
 
 mySongs.forEach(item => {
     item.addEventListener('click', (e) => {
@@ -49,6 +56,76 @@ function loadPresetSong(src){
             playAudio();
         })
 
+}
+
+function togglePlay(){ // master function to switch between play and pause
+    if(!audioBuffer) return alert("select a track first D:");
+
+    if(isPlaying) {
+        // PAUSES MUSIC
+        isPlaying = false;
+        playPauseBtn.innerText = "Play";
+        pausedAt += audioCtx.currentTime - startTime; // saves the timestamp where we stopped
+
+        if(sourceNode){
+            sourceNode.stop(); // stops the music stream completely
+            sourceNode = null;
+        }
+        clearInterval(progressInterval); // stops the slider loop from moving
+
+    }else {
+        // resumes or plays the muscic
+        isPlaying = true;
+        playPauseBtn.innerText = "Pause";
+
+        sourceNode = audioCtx.createBufferSource();
+        sourceNode.buffer = audioBuffer;
+
+        // we configure everything again..
+        bassNode = audioCtx.createBiquadFilter();
+        bassNode.type = "lowshelf";
+        bassNode.frequency.value = 200;
+        bassNode.gain.value = bassSlider.value;
+
+        nostalgiaFilter = audioCtx.createBiquadFilter();
+        nostalgiaFilter.type = "bandpass";
+        nostalgiaFilter.frequency.value = 1500;
+        nostalgiaFilter.Q.value = nostalgiaSlider.value == "1" ? 2.0 : 0.0001;
+
+        // SSETTUING  UP  ANALYSER FOR OUR VISUALIZER
+        if (!analyser) {
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256; // Defines how detailed our  chart will be
+        }
+        // Connect everything down the stream 
+        sourceNode.connect(bassNode);
+        bassNode.connect(nostalgiaFilter);
+        nostalgiaFilter.connect(analyser); // sends audio to analyser before speakers
+        analyser.connect(audioCtx.destination);
+
+        progressBar.max = audioBuffer.duration; // makes the slider max length match the song duration
+        totalDurationLabel.innerText = formatTime(audioBuffer.duration);
+
+        startTime = audioCtx.currentTime;
+        sourceNode.start(0, pausedAt); // starts the track right from where it was paused
+        // Start animating
+        drawVisualizer(); // triggers the canvas loops
+        // we update our timeline 
+        progressInterval = setInterval(() => { // loop to move the slider handle every 250ms
+            const elapsedTime = pausedAt + (audioCtx.currentTime - startTime);
+            if (elapsedTime >= audioBuffer.duration) { // checks if song ended naturally
+                clearInterval(progressInterval);
+                isPlaying = false;
+                playPauseBtn.innerText = "Play";
+                pausedAt = 0;
+                progressBar.value = 0;
+                currentTimeLabel.innerText = "0:00";
+            } else {
+                progressBar.value = elapsedTime;
+                currentTimeLabel.innerText = formatTime(elapsedTime);
+            }
+        }, 250);
+    }
 }
 fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -97,28 +174,37 @@ function handleFile(file) {
 }
 
 function playAudio() {
-if (!audioCtx || !audioBuffer) return;
-    const source = audioCtx.createBufferSource();
-    source.buffer = audioBuffer;
-    // connects it to the speakers
-    // bass booster
-    bassNode = audioCtx.createBiquadFilter();
-    bassNode.type = "lowshelf";// targets only frequenscies below a given lim
-    bassNode.frequency.value = 200; // only below 200 hz
-    bassNode.gain.value = bassSlider.value; // the boost gets based off the slider
-    // old filter
-    nostalgiaFilter = audioCtx.createBiquadFilter();
-    nostalgiaFilter.type = "bandpass";
-    nostalgiaFilter.frequency.value = 1500; // voice frequencies
-    // we then use the Q which is the quality fasctor of the audio and control itif the slider is at 0 its low if its at 1 we set it to 2 so it "ruins " the sound
-    nostalgiaFilter.Q.value = nostalgiaSlider.value == "1" ? 2.0 : 0.0001;
-
-    source.connect(bassNode);
-    bassNode.connect(nostalgiaFilter);
-    nostalgiaFilter.connect(audioCtx.destination);
-
-    source.start(0);
+    if (!audioCtx || !audioBuffer) return;
+    if (sourceNode) {
+        sourceNode.stop();
+        sourceNode = null;
+    }
+    clearInterval(progressInterval); // resets everything back to 0 when loading new song
+    isPlaying = false;
+    pausedAt = 0;
+    progressBar.value = 0;
+    currentTimeLabel.innerText = "0:00";
+    togglePlay();
 }
+
+playPauseBtn.addEventListener("click", togglePlay);
+
+progressBar.addEventListener("input", (e) => { // checks if user is clicking/dragging the progress line
+    if (!audioBuffer) return;
+    const wasPlaying = isPlaying;
+    if (isPlaying) togglePlay(); // pauses first so it doesn't glitch 
+    pausedAt = parseFloat(e.target.value); // updates position to wherever user clicked
+    currentTimeLabel.innerText = formatTime(pausedAt);
+    if (wasPlaying) togglePlay(); // resumes if it was already playing before
+});
+
+bassSlider.addEventListener("input", (e) => {
+    if (bassNode) bassNode.gain.value = e.target.value;
+});
+
+nostalgiaSlider.addEventListener("input", (e) => {
+    if(nostalgiaFilter) nostalgiaFilter.Q.value = e.target.value == '1' ? 2.0 : 0.0001;
+});
 
 bassSlider.addEventListener("input", (e) => {
     if (bassNode) { 
@@ -131,7 +217,38 @@ nostalgiaSlider.addEventListener("input", (e) => {
         nostalgiaFilter.Q.value = e.target.value == '1' ? 2.0 : 0.0001;
     }
 })
+// visualizer section (canvas)
+function drawVisualizer() {
+    if (!analyser) return;
 
+    const ctx = visualizer.getContext("2d");
+    const bufferLength = analyser.frequencyBinCount; // half of the fft size
+    const dataArray = new Uint8Array(bufferLength); // array full of audio byte values
 
+    function renderFrame() {
+        if (!isPlaying) return; // stops loop if paused
 
+        requestAnimationFrame(renderFrame); // handles standard animation loop timing
 
+        analyser.getByteFrequencyData(dataArray); // copies fresh audio frequency data into our array
+
+        ctx.fillStyle = "#050505";
+        ctx.fillRect(0, 0, visualizer.width, visualizer.height); // clears the old frame
+
+        const barWidth = (visualizer.width / bufferLength) * 2.5;
+        let x = 0;
+
+        
+        for (let i = 0; i < bufferLength; i++) {
+            const barHeight = dataArray[i]; // gets value of current bar frequency
+
+    
+            ctx.fillStyle = `rgb(${barHeight + 100}, 50, 250)`; // purple-neon color mix based on volume/pitch
+            ctx.fillRect(x, visualizer.height - barHeight / 1.5, barWidth - 2, barHeight / 1.5); // draws bar from bottom up
+
+            x += barWidth;
+        }
+    }
+
+    renderFrame();
+}
