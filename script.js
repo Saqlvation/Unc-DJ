@@ -3,6 +3,7 @@ const bassSlider = document.getElementById("bass-slider");
 const nostalgiaSlider = document.getElementById("nostalgia-slider");
 const fileInput = document.getElementById("file-input");
 const fileSelection = document.getElementById("fileSelection");
+const currentSongLabel = document.getElementById("currentSong"); // gets the song title h3 element
 let audioCtx = null;
 let audioBuffer = null;
 let bassNode = null;
@@ -36,6 +37,9 @@ mySongs.forEach(item => {
     item.addEventListener('click', (e) => {
         //gets the file path
         const songSRC = e.target.getAttribute('data-src');
+        // updates the header
+        currentSongLabel.innerText = "Current Song : " + e.target.innerText; 
+        
         loadPresetSong(songSRC); // we call the preset function
     });
 });
@@ -153,6 +157,8 @@ function handleFile(file) {
     if(!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    // updatws header
+    currentSongLabel.innerText = "Current Song : " + file.name;
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
 
